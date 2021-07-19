@@ -4,12 +4,27 @@ import 'package:pedometer/pedometer.dart';
 
 void main() => runApp(MyApp());
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   @override
-  _MyAppState createState() => _MyAppState();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: ThemeData.light(),
+      darkTheme: ThemeData.dark(),
+      themeMode: ThemeMode.dark, // ThemeMode.system,
+      home: PedometerPage(),
+      routes: <String, WidgetBuilder>{
+        "/bluetooth": (BuildContext context) => BluetoothPage(),
+      },
+    );
+  }
 }
 
-class _MyAppState extends State<MyApp> {
+class PedometerPage extends StatefulWidget {
+  @override
+  _PedometerPageState createState() => _PedometerPageState();
+}
+
+class _PedometerPageState extends State<PedometerPage> {
   late Stream<StepCount> _stepCountStream;
   late Stream<PedestrianStatus> _pedestrianStatusStream;
   String _status = '?', _steps = '?';
@@ -68,94 +83,120 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
+    return Scaffold(
         appBar: AppBar(
-          title: const Text('Pedometer app'),
+          title: const Text('Pedometer'),
+          actions: <Widget>[
+            IconButton(
+              icon: const Icon(Icons.bluetooth),
+              tooltip: 'Bluetooth',
+              onPressed: () {
+                Navigator.pushNamed(context, "/bluetooth");
+              },
+            ),
+          ],
         ),
-        body: OrientationBuilder(
-          builder: (context, orientation) {
-            return Center(
-              child: Flex(
-                direction: orientation == Orientation.portrait
-                    ? Axis.vertical
-                    : Axis.horizontal,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Text(
-                          'Total Steps taken:',
-                          style: TextStyle(fontSize: 25),
-                        ),
-                        Text(
-                          _steps,
-                          style: TextStyle(fontSize: 50),
-                        ),
-                      ]),
-                  orientation == Orientation.portrait
-                      ? Divider(
-                          height: 50,
-                          thickness: 0,
-                          color: Colors.transparent,
-                        )
-                      : VerticalDivider(
-                          width: 20,
-                          thickness: 0,
-                          color: Colors.transparent,
-                        ),
-                  Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Text(
-                          'Steps taken:',
-                          style: TextStyle(fontSize: 25),
-                        ),
-                        Text(
-                          (_count - _base).toString(),
-                          style: TextStyle(fontSize: 50),
-                        ),
-                      ]),
-                  orientation == Orientation.portrait
-                      ? Divider(
-                          height: 50,
-                          thickness: 0,
-                          color: Colors.transparent,
-                        )
-                      : VerticalDivider(
-                          width: 20,
-                          thickness: 0,
-                          color: Colors.transparent,
-                        ),
-                  Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Text(
-                          'Pedestrian status:',
-                          style: TextStyle(fontSize: 25),
-                        ),
-                        Icon(
-                          _status == 'walking'
-                              ? Icons.directions_walk
-                              : _status == 'stopped'
-                                  ? Icons.accessibility_new
-                                  : Icons.error,
-                          size: 100,
-                        ),
-                        Center(
-                          child: Text(
-                            _status,
-                            style: _status == 'walking' || _status == 'stopped'
-                                ? TextStyle(fontSize: 25)
-                                : TextStyle(fontSize: 15, color: Colors.red),
-                          ),
-                        )
-                      ])
-                ],
-              ),
-            );
-          },
+        body: PedometerDisplay(
+          steps: _steps,
+          currSteps: (_count - _base),
+          pedStatus: _status,
+        ),
+    );
+  }
+}
+
+class PedometerDisplay extends StatelessWidget {
+  const PedometerDisplay({
+    Key? key,
+    required this.steps,
+    required this.currSteps,
+    required this.pedStatus,
+  }) : super(key: key);
+
+  final String steps;
+  final String pedStatus;
+  final int currSteps;
+
+  @override
+  Widget build(BuildContext context) {
+    return OrientationBuilder(
+      builder: (context, orientation) {
+        return Center(
+          child: Flex(
+            direction: orientation == Orientation.portrait
+                ? Axis.vertical
+                : Axis.horizontal,
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: <Widget>[
+              Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    const Text(
+                      'Total Steps taken:',
+                      style: TextStyle(fontSize: 25),
+                    ),
+                    Text(
+                      steps,
+                      style: TextStyle(fontSize: 50),
+                    ),
+                  ]),
+              Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    const Text(
+                      'Steps taken:',
+                      style: TextStyle(fontSize: 25),
+                    ),
+                    Text(
+                      currSteps.toString(),
+                      style: TextStyle(fontSize: 50),
+                    ),
+                  ]),
+              Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    const Text(
+                      'Pedestrian status:',
+                      style: TextStyle(fontSize: 25),
+                    ),
+                    Icon(
+                      pedStatus == 'walking'
+                          ? Icons.directions_walk
+                          : pedStatus == 'stopped'
+                              ? Icons.accessibility_new
+                              : Icons.error,
+                      size: 100,
+                    ),
+                    Center(
+                      child: Text(
+                        pedStatus,
+                        style: pedStatus == 'walking' || pedStatus == 'stopped'
+                            ? TextStyle(fontSize: 25)
+                            : TextStyle(fontSize: 15, color: Colors.red),
+                      ),
+                    )
+                  ])
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class BluetoothPage extends StatelessWidget {
+  const BluetoothPage({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Bluetooth'),
+      ),
+      body: const Center(
+        child: const Text(
+          'Bluetooth Page',
+          style: TextStyle(fontSize: 60),
         ),
       ),
     );
