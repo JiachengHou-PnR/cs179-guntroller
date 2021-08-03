@@ -32,6 +32,14 @@ The Guntroller is a device that one can use as a controller with a desktop compu
 
 ![Gantt Chart Image](media/Gantt%20Chart%20-%20Chart.jpg)
 
+## Arduino Sketch
+
+### Included Libraries
+
+1. Mouse
+2. Adafruit_MPU6050
+3. Adafruit_Sensor
+
 ### Milestones
 
 #### Milestone I
@@ -44,9 +52,9 @@ The Guntroller is a device that one can use as a controller with a desktop compu
 
 #### Milestone II
 
-- [ ] Read accelerometer/gyroscope data (Moved from Milestone I)
-- [ ] Read accelerometer/gyroscope data
-- [ ] Process accelerometer/gyroscope data into appropriate inputs
+- [x] Read accelerometer/gyroscope data (Moved from Milestone I)
+- [x] Read accelerometer/gyroscope data
+- [x] Process accelerometer/gyroscope data into appropriate inputs
 - [ ] Establish a bluetooth connection between the pedometer app and microcontroller.
 
 #### Milestone III (internal)
