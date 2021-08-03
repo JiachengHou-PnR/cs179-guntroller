@@ -1,6 +1,6 @@
 #include <Mouse.h>
-#include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
+#include <Adafruit_MPU6050.h>
 #include <Wire.h>
 
 
@@ -8,25 +8,35 @@
 Adafruit_MPU6050 mpu;
 
 // Set input pin numbers
-const int mouse_button_pin = 7;
+const int MOUSE_ON_OFF_PIN = 7;     // Turns mouse function on/off
+const int SENSITIVITY_UP_PIN = 4;   // Makes mouse more sensitive
+const int SENSITIVITY_DOWN_PIN = 3; // Makes mouse less sensitive
+
 // Set output pin numbers
-const int mouse_led_pin = 13;
+const int MOUSE_LED_PIN = 13;       // Status LED for mouse function 
 
 // Constants
-const int sensitivity_height = 10;
-const int sensitivity_width = 15;
+const int MOVE_RATIO_HEIGHT = 2;    // The constant for the vertical moving speed ratio of the mouse 
+const int MOVE_RATIO_WIDTH  = -3;   // The constant for the horizontal moving speed ratio of the mouse
 
 // Variables
-float acce_x, acce_y, acce_z;
-float gyro_x, gyro_y, gyro_z;
-int mouseState = LOW;
-int lastButtonState;
-int currentButtonState;
+float acce_x, acce_y, acce_z;       // Data from accelerometer
+float gyro_x, gyro_y, gyro_z;       // Data from gyroscope
+
+int sensitivity = 5;                // Mouse moving sensitivity 1-10
+int lastSensUpButtonState;
+int currentSensUpButtonState;
+int lastSensDownButtonState;
+int currentSensDownButtonState;
+
+int mouseState = LOW;               // Mouse function state
+int lastMouseButtonState;
+int currentMouseButtonState;
 
 void setup(void) {
-  pinMode(mouse_button_pin, INPUT);
-  pinMode(mouse_led_pin, OUTPUT);
-  currentButtonState = digitalRead(mouse_button_pin);
+  pinMode(MOUSE_ON_OFF_PIN, INPUT);
+  pinMode(MOUSE_LED_PIN, OUTPUT);
+  currentMouseButtonState = digitalRead(MOUSE_ON_OFF_PIN);
 
   Serial.begin(115200);
   while (!Serial)
@@ -109,11 +119,17 @@ void setup(void) {
 
 void loop() {
 
-  lastButtonState    = currentButtonState;      // save the last state
-  currentButtonState = digitalRead(mouse_button_pin); // read new state
+  lastMouseButtonState    = currentMouseButtonState;       // save the last state
+  currentMouseButtonState = digitalRead(MOUSE_ON_OFF_PIN); // read new state
 
-  if (lastButtonState == HIGH && currentButtonState == LOW) {
-    Serial.print("The button is pressed, mouse function is ");
+  lastSensUpButtonState    = currentSensUpButtonState;       // save the last state
+  currentSensUpButtonState = digitalRead(SENSITIVITY_UP_PIN); // read new state
+
+  lastSensDownButtonState    = currentSensDownButtonState;       // save the last state
+  currentSensDownButtonState = digitalRead(SENSITIVITY_DOWN_PIN); // read new state
+
+  if (lastMouseButtonState == HIGH && currentMouseButtonState == LOW) {
+    Serial.print("The on/off button is pressed, mouse function is ");
 
     // toggle state of LED
     mouseState = !mouseState;
@@ -125,7 +141,29 @@ void loop() {
     Serial.println("");
 
     // control LED arccoding to the toggled state
-    digitalWrite(mouse_led_pin, mouseState);
+    digitalWrite(MOUSE_LED_PIN, mouseState);
+  }
+
+  if (lastSensUpButtonState == HIGH && currentSensUpButtonState == LOW) {
+    Serial.print("Sens UP button is pressed, new sensitivity is ");
+
+    // Increase sensitivity
+    
+    if(sensitivity++ >= 10)
+      sensitivity = 10;
+
+    Serial.println(sensitivity);
+    Serial.println("");
+  }
+  else if (lastSensDownButtonState == HIGH && currentSensDownButtonState == LOW) {
+    Serial.print("Sens DOWN button is pressed, new sensitivity is ");
+
+    // Increase sensitivity
+    if(sensitivity-- <= 1)
+      sensitivity = 1;
+
+    Serial.println(sensitivity);
+    Serial.println("");
   }
 
   if (mouseState) {
@@ -158,7 +196,8 @@ void loop() {
     Serial.println(" rad/s");
     Serial.println("");
     
-    Mouse.move(gyro_z * -sensitivity_width, gyro_x * sensitivity_height);
+    Mouse.move(gyro_z * MOVE_RATIO_WIDTH  * sensitivity, 
+               gyro_x * MOVE_RATIO_HEIGHT * sensitivity);
   }
   
   delay(15);
