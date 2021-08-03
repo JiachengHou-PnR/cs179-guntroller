@@ -30,7 +30,7 @@ The Guntroller is a device that one can use as a controller with a desktop compu
 
 [Gantt Chart](https://docs.google.com/spreadsheets/d/114Kd9no1A45DeJyBgwS2PYVXap5oLFPu3NEgJw_vOGg/edit?usp=sharing)
 
-![Gantt Chart Image](media/Gantt%20Chart%20-%20Chart.png)
+![Gantt Chart Image](media/Gantt%20Chart%20-%20Chart.jpg)
 
 ### Milestones
 
