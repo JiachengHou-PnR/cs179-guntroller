@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:pedometer/pedometer.dart';
 
 class PedometerPage extends StatefulWidget {
+  final ValueChanged<bool> onStatusChange;
+
+  const PedometerPage({required this.onStatusChange});
+
   @override
   _PedometerPageState createState() => _PedometerPageState();
 }
@@ -30,6 +34,7 @@ class _PedometerPageState extends State<PedometerPage> {
 
   void onPedestrianStatusChanged(PedestrianStatus event) {
     print(event);
+    widget.onStatusChange(event.status == "walking");
     setState(() {
       _status = event.status;
       if (_status == "walking") {
@@ -67,24 +72,10 @@ class _PedometerPageState extends State<PedometerPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pedometer'),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.bluetooth),
-            tooltip: 'Bluetooth',
-            onPressed: () {
-              Navigator.pushNamed(context, "/bluetooth");
-            },
-          ),
-        ],
-      ),
-      body: PedometerDisplay(
-        steps: _steps,
-        currSteps: (_count - _base),
-        pedStatus: _status,
-      ),
+    return PedometerDisplay(
+      steps: _steps,
+      currSteps: (_count - _base),
+      pedStatus: _status,
     );
   }
 }
