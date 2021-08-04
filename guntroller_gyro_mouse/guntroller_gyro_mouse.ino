@@ -144,7 +144,17 @@ void loop() {
     digitalWrite(MOUSE_LED_PIN, mouseState);
   }
 
-  if (lastSensUpButtonState == HIGH && currentSensUpButtonState == LOW) {
+  if (lastSensUpButtonState == HIGH && currentSensUpButtonState == LOW &&
+      lastSensDownButtonState == HIGH && currentSensDownButtonState == LOW) {
+    Serial.print("Sens UP and DOWN buttons are pressed, reset sensitivity to ");
+
+    // Reset sensitivity
+    sensitivity = 5;
+
+    Serial.println(sensitivity);
+    Serial.println("");
+  }
+  else if (lastSensUpButtonState == HIGH && currentSensUpButtonState == LOW) {
     Serial.print("Sens UP button is pressed, new sensitivity is ");
 
     // Increase sensitivity
@@ -158,7 +168,7 @@ void loop() {
   else if (lastSensDownButtonState == HIGH && currentSensDownButtonState == LOW) {
     Serial.print("Sens DOWN button is pressed, new sensitivity is ");
 
-    // Increase sensitivity
+    // Decrease sensitivity
     if(sensitivity-- <= 1)
       sensitivity = 1;
 
