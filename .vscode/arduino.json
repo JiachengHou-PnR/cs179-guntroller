@@ -1,6 +1,0 @@
-{
-    "sketch": "./guntroller_gyro_mouse/guntroller_gyro_mouse.ino",
-    "board": "arduino:avr:leonardo",
-    "programmer": "arduino:avrispmkii",
-    "port": "/dev/tty.usbmodemHIDGD1"
-}
