@@ -1,8 +1,12 @@
 #include <Mouse.h>
+#include <Keyboard.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_MPU6050.h>
 #include <Wire.h>
+#include <SoftwareSerial.h>
 
+// Set up a software serial interface for the HC-05 module
+SoftwareSerial Bluetooth(10, 11); // RX | TX
 
 // MPU6050
 Adafruit_MPU6050 mpu;
@@ -32,6 +36,8 @@ int currentSensDownButtonState;
 int mouseState = LOW;               // Mouse function state
 int lastMouseButtonState;
 int currentMouseButtonState;
+
+int currentWalkingState = -1;
 
 void setup(void) {
   pinMode(MOUSE_ON_OFF_PIN, INPUT);
@@ -115,6 +121,12 @@ void setup(void) {
 
   Serial.println("");
   delay(100);
+
+  Bluetooth.begin(9600);
+  Serial.println("Started Bluetooth serial interface");
+
+  Mouse.begin();
+  Keyboard.begin();
 }
 
 void loop() {
@@ -208,6 +220,18 @@ void loop() {
     
     Mouse.move(gyro_z * MOVE_RATIO_WIDTH  * sensitivity, 
                gyro_x * MOVE_RATIO_HEIGHT * sensitivity);
+  }
+
+  if (Bluetooth.available() > 0) {
+    currentWalkingState = Bluetooth.read();
+    if (currentWalkingState >= 1) {
+      Keyboard.press('w');
+      Serial.println("Received walking signal");
+    } else if (currentWalkingState == 0) {
+      Keyboard.release('w');
+      Serial.println("Received stopping signal");
+    }
+    Serial.println("");
   }
   
   delay(15);
