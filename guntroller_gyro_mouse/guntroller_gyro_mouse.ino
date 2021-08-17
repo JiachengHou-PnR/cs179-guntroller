@@ -129,6 +129,26 @@ void setup(void) {
   Keyboard.begin();
 }
 
+void printSensorReadings() {
+
+  Serial.print("Acceleration X: ");
+  Serial.print(acce_x);
+  Serial.print(", Y: ");
+  Serial.print(acce_y);
+  Serial.print(", Z: ");
+  Serial.print(acce_z);
+  Serial.println(" m/s^2");
+
+  Serial.print("Rotation X: ");
+  Serial.print(gyro_x);
+  Serial.print(", Y: ");
+  Serial.print(gyro_y);
+  Serial.print(", Z: ");
+  Serial.print(gyro_z);
+  Serial.println(" rad/s");
+  Serial.println("");
+}
+
 void loop() {
 
   lastMouseButtonState    = currentMouseButtonState;       // save the last state
@@ -201,22 +221,7 @@ void loop() {
     gyro_z = g.gyro.z;
 
     /* Print out the values */
-    Serial.print("Acceleration X: ");
-    Serial.print(acce_x);
-    Serial.print(", Y: ");
-    Serial.print(acce_y);
-    Serial.print(", Z: ");
-    Serial.print(acce_z);
-    Serial.println(" m/s^2");
-
-    Serial.print("Rotation X: ");
-    Serial.print(gyro_x);
-    Serial.print(", Y: ");
-    Serial.print(gyro_y);
-    Serial.print(", Z: ");
-    Serial.print(gyro_z);
-    Serial.println(" rad/s");
-    Serial.println("");
+    printSensorReadings();
     
     Mouse.move(gyro_z * MOVE_RATIO_WIDTH  * sensitivity, 
                gyro_x * MOVE_RATIO_HEIGHT * sensitivity);
