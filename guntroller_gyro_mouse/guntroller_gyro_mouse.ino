@@ -129,6 +129,20 @@ void setup(void) {
   Keyboard.begin();
 }
 
+void getButtonStates() {
+  // Mouse function on/off button
+  lastMouseButtonState    = currentMouseButtonState;        // save the last state
+  currentMouseButtonState = digitalRead(MOUSE_ON_OFF_PIN);  // read new state
+
+  // Mouse sensitivity up button
+  lastSensUpButtonState    = currentSensUpButtonState;
+  currentSensUpButtonState = digitalRead(SENSITIVITY_UP_PIN);
+
+  // Mouse seneitivity down button
+  lastSensDownButtonState    = currentSensDownButtonState;
+  currentSensDownButtonState = digitalRead(SENSITIVITY_DOWN_PIN);
+}
+
 void printSensorReadings() {
 
   Serial.print("Acceleration X: ");
@@ -151,14 +165,7 @@ void printSensorReadings() {
 
 void loop() {
 
-  lastMouseButtonState    = currentMouseButtonState;       // save the last state
-  currentMouseButtonState = digitalRead(MOUSE_ON_OFF_PIN); // read new state
-
-  lastSensUpButtonState    = currentSensUpButtonState;       // save the last state
-  currentSensUpButtonState = digitalRead(SENSITIVITY_UP_PIN); // read new state
-
-  lastSensDownButtonState    = currentSensDownButtonState;       // save the last state
-  currentSensDownButtonState = digitalRead(SENSITIVITY_DOWN_PIN); // read new state
+  getButtonStates();
 
   if (lastMouseButtonState == HIGH && currentMouseButtonState == LOW) {
     Serial.print("The on/off button is pressed, mouse function is ");
