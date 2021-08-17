@@ -14,6 +14,8 @@ The Guntroller is a device that one can use as a controller with a desktop compu
 
 ![Design Illustration](media/Design.png "Design Illustration")
 
+![Circuit Illustration](media/Circuit.png "Circuit Illustration")
+
 ## Project Requirements
 
 [Project Requirement Specification](https://docs.google.com/document/d/1ixeDe6Jb7c0Ek7XUqX1nqLU4_VB7hxSOK8AWoJY3O18/edit?usp=sharing)
@@ -29,7 +31,17 @@ walking movement. This signal is sent over a Bluetooth connection with
 the Guntroller. To connect the app to the Guntroller press the Bluetooth
 icon in the upper right corner of the app. The name of the Bluetooth module
 is `HC-05` and the pin is `1234`. Once connected the app will send signals
-as long as it remains open.
+as long as it remains open. When first using the app Android may ask for the
+permissions listed below. In order for the app to work all permissions must
+be granted and the reasons as to why are included in the following table.
+
+#### Permissions
+
+| Permission | Reason |
+| ---------- | ------ |
+| Activity Recognition | Needed to check whether the user is walking |
+| Bluetooth | Needed to connect to the Guntroller over Bluetooth |
+| Coarse Location | This permission is needed to do Bluetooth scanning because a Bluetooth scan could reveal location data |
 
 ## Project Progress
 
@@ -82,5 +94,3 @@ as long as it remains open.
 [Testing Strategy Document](https://docs.google.com/document/d/1sgLBqdYWkjyDIFjX3zhHuqd7Ft7VmxpZ4lNj_bPD-i8/edit?usp=sharing)
 
 [Testing Log](https://docs.google.com/spreadsheets/d/1BwUKh9LCYZT5Kyqq0h0FdW5ELCY_bZ4H4P_4RCk5O5A/edit?usp=sharing)
-
-
