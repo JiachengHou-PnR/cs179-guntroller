@@ -11,33 +11,43 @@ SoftwareSerial Bluetooth(10, 11); // RX | TX
 // MPU6050
 Adafruit_MPU6050 mpu;
 
-// Set input pin numbers
+// INPUT PIN numbers
 const int MOUSE_ON_OFF_PIN = 7;     // Turns mouse function on/off
 const int SENSITIVITY_UP_PIN = 4;   // Makes mouse more sensitive
 const int SENSITIVITY_DOWN_PIN = 3; // Makes mouse less sensitive
 
-// Set output pin numbers
+// OUTPUT PIN numbers
 const int MOUSE_LED_PIN = 13;       // Status LED for mouse function 
 
-// Constants
+// CONSTANTS
 const int MOVE_RATIO_HEIGHT = 2;    // The constant for the vertical moving speed ratio of the mouse 
 const int MOVE_RATIO_WIDTH  = -3;   // The constant for the horizontal moving speed ratio of the mouse
 
-// Variables
+// VARIABLES
 float acce_x, acce_y, acce_z;       // Data from accelerometer
 float gyro_x, gyro_y, gyro_z;       // Data from gyroscope
 
+// Mouse on off
+int mouseState = LOW;               // Mouse function state
+int lastMouseButtonState;
+int currentMouseButtonState;
+
+// Mouse sensitivity
 int sensitivity = 5;                // Mouse moving sensitivity 1-10
 int lastSensUpButtonState;
 int currentSensUpButtonState;
 int lastSensDownButtonState;
 int currentSensDownButtonState;
 
-int mouseState = LOW;               // Mouse function state
-int lastMouseButtonState;
-int currentMouseButtonState;
+// Mouse reset
+int initMousePosition;
+int lastResetButtonState;
+int currentResetButtonState;
 
+// Bluetooth pedometer
 int currentWalkingState = -1;
+
+
 
 void setup(void) {
   pinMode(MOUSE_ON_OFF_PIN, INPUT);
