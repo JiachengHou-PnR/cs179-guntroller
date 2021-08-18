@@ -18,10 +18,10 @@ const int SENSITIVITY_DOWN_PIN = 3; // Makes mouse less sensitive
 const int MOUSE_RESET_PIN      = 5; // Reset mouse cursor position
 
 // OUTPUT PIN numbers
-const int MOUSE_LED_PIN        = 13;// Status LED for mouse function 
+const int MOUSE_LED_PIN        = 13;// Status LED for mouse function
 
 // CONSTANTS
-const byte MOVE_RATIO_HEIGHT = 2;   // The vertical moving speed ratio of the mouse 
+const byte MOVE_RATIO_HEIGHT = 2;   // The vertical moving speed ratio of the mouse
 const byte MOVE_RATIO_WIDTH  = 3;   // The horizontal moving speed ratio of the mouse
 const byte SINGLE_MOVE_LIMIT = 127; // The max value for a single Mouse.move(), i.e. sizeof(byte)/2
 const float RESET_MOVE_RATIO = 0.7; // Reduce mouse moved vals
@@ -52,7 +52,8 @@ bool currentResetButtonState;
 // Bluetooth pedometer
 int currentWalkingState = -1;
 
-
+// Keycodes
+char move_forward = 'w';
 
 void setup(void) {
   pinMode(MOUSE_ON_OFF_PIN, INPUT);
@@ -95,6 +96,7 @@ void setup(void) {
       Serial.println("+-16G");
       break;
   }
+
   mpu.setGyroRange(MPU6050_RANGE_500_DEG);
   Serial.print("Gyro range set to: ");
   switch (mpu.getGyroRange()) {
@@ -166,6 +168,116 @@ void getButtonStates() {
   currentResetButtonState = digitalRead(MOUSE_RESET_PIN);
 }
 
+void getMouseState()
+{
+  if (lastMouseButtonState == HIGH && currentMouseButtonState == LOW) {
+    // toggle state of LED
+    mouseState = !mouseState;
+
+    // Print current state
+    Serial.print("The on/off button is pressed, mouse function is ");
+    if (mouseState)
+      Serial.println("ON");
+    else
+      Serial.println("OFF");
+    Serial.println("");
+
+    // Reset mouseMovedVals when turning mouse function on
+    if (mouseState)
+      resetMouseMovedVals();
+
+    // control LED arccoding to the toggled state
+    digitalWrite(MOUSE_LED_PIN, mouseState);
+  }
+}
+
+void getMouseSensitivity()
+{
+  if (lastSensUpButtonState == HIGH && currentSensUpButtonState == LOW &&
+      lastSensDownButtonState == HIGH && currentSensDownButtonState == LOW) {
+    Serial.print("Sens UP and DOWN buttons are pressed, reset sensitivity to ");
+
+    // Reset sensitivity
+    sensitivity = 5;
+
+    Serial.println(sensitivity);
+    Serial.println("");
+  }
+  else if (lastSensUpButtonState == HIGH && currentSensUpButtonState == LOW) {
+    Serial.print("Sens UP button is pressed, new sensitivity is ");
+
+    // Increase sensitivity
+
+    if (sensitivity++ >= 10)
+      sensitivity = 10;
+
+    Serial.println(sensitivity);
+    Serial.println("");
+  }
+  else if (lastSensDownButtonState == HIGH && currentSensDownButtonState == LOW) {
+    Serial.print("Sens DOWN button is pressed, new sensitivity is ");
+
+    // Decrease sensitivity
+    if (sensitivity-- <= 1)
+      sensitivity = 1;
+
+    Serial.println(sensitivity);
+    Serial.println("");
+  }
+}
+
+
+void processMouseReset()
+{
+  // Mouse reset button is pressed
+  if (lastResetButtonState == HIGH && currentResetButtonState == LOW) {
+    // Print message
+    Serial.println("Reset button pressed, mouse position and traveled values resetted.");
+
+    // Move mouse opposite to where it has been moved
+    moveMouse(-mouseMovedVal_x, -mouseMovedVal_y, false);
+
+    // Reset mouseMovedVals
+    resetMouseMovedVals();
+  }
+}
+void processMouseState()
+{
+  if (mouseState) {
+    /* Get new sensor events with the readings */
+    sensors_event_t a, g, temp;
+    mpu.getEvent(&a, &g, &temp);
+
+    acce_x = a.acceleration.x;
+    acce_y = a.acceleration.y;
+    acce_z = a.acceleration.z;
+    gyro_x = g.gyro.x;
+    gyro_y = g.gyro.y;
+    gyro_z = g.gyro.z;
+
+    /* Print out the values */
+    //printSensorReadings();
+
+    // Move mouse cursor
+    moveMouse(gyro_z, gyro_x, true);
+  }
+
+}
+void processBluetooth()
+{
+  if (Bluetooth.available() > 0) {
+    currentWalkingState = Bluetooth.read();
+    if (currentWalkingState >= 1) {
+      Keyboard.press(move_forward);
+      Serial.println("Received walking signal");
+    } else if (currentWalkingState == 0) {
+      Keyboard.release(move_forward);
+      Serial.println("Received stopping signal");
+    }
+    Serial.println("");
+  }
+}
+
 void printSensorReadings() {
 
   Serial.print("Acceleration X: ");
@@ -208,7 +320,6 @@ void moveMouse(float x, float y, bool fromSensor) {
     if (mouseMovedVal_y < -SINGLE_MOVE_LIMIT * MOVE_RATIO_HEIGHT)
       yVal = (yVal < 0) ? 0 : yVal;
   }
-  
 
   Serial.print("xVal: ");
   Serial.print(xVal);
@@ -216,8 +327,8 @@ void moveMouse(float x, float y, bool fromSensor) {
   Serial.println(yVal);
 
   // Move mouse
-  // If vals exceeds single move limit, move mouse in multiple calls 
-  while(xVal > SINGLE_MOVE_LIMIT)
+  // If vals exceeds single move limit, move mouse in multiple calls
+  while (xVal > SINGLE_MOVE_LIMIT)
   {
     Mouse.move(SINGLE_MOVE_LIMIT, 0, 0);
     xVal -= SINGLE_MOVE_LIMIT;
@@ -250,105 +361,13 @@ void moveMouse(float x, float y, bool fromSensor) {
   Serial.println(mouseMovedVal_y);
 }
 
-void loop() {
-
+void loop()
+{
   getButtonStates();
-
-  if (lastMouseButtonState == HIGH && currentMouseButtonState == LOW) {
-    // toggle state of LED
-    mouseState = !mouseState;
-
-    // Print current state
-    Serial.print("The on/off button is pressed, mouse function is ");
-    if (mouseState)
-      Serial.println("ON");
-    else
-      Serial.println("OFF");
-    Serial.println("");
-
-    // Reset mouseMovedVals when turning mouse function on 
-    if (mouseState)
-      resetMouseMovedVals();
-    
-    // control LED arccoding to the toggled state
-    digitalWrite(MOUSE_LED_PIN, mouseState);
-  }
-
-  if (lastSensUpButtonState == HIGH && currentSensUpButtonState == LOW &&
-      lastSensDownButtonState == HIGH && currentSensDownButtonState == LOW) {
-    Serial.print("Sens UP and DOWN buttons are pressed, reset sensitivity to ");
-
-    // Reset sensitivity
-    sensitivity = 5;
-
-    Serial.println(sensitivity);
-    Serial.println("");
-  }
-  else if (lastSensUpButtonState == HIGH && currentSensUpButtonState == LOW) {
-    Serial.print("Sens UP button is pressed, new sensitivity is ");
-
-    // Increase sensitivity
-    
-    if(sensitivity++ >= 10)
-      sensitivity = 10;
-
-    Serial.println(sensitivity);
-    Serial.println("");
-  }
-  else if (lastSensDownButtonState == HIGH && currentSensDownButtonState == LOW) {
-    Serial.print("Sens DOWN button is pressed, new sensitivity is ");
-
-    // Decrease sensitivity
-    if(sensitivity-- <= 1)
-      sensitivity = 1;
-
-    Serial.println(sensitivity);
-    Serial.println("");
-  }
-
-  // Mouse reset button is pressed
-  if (lastResetButtonState == HIGH && currentResetButtonState == LOW) {
-    // Print message
-    Serial.println("Reset button pressed, mouse position and traveled values resetted.");
-    
-    // Move mouse opposite to where it has been moved
-    moveMouse(-mouseMovedVal_x, -mouseMovedVal_y, false);
-
-    // Reset mouseMovedVals
-    resetMouseMovedVals();
-  }
-
-  if (mouseState) {
-    /* Get new sensor events with the readings */
-    sensors_event_t a, g, temp;
-    mpu.getEvent(&a, &g, &temp);
-    
-    acce_x = a.acceleration.x;
-    acce_y = a.acceleration.y;
-    acce_z = a.acceleration.z;
-    gyro_x = g.gyro.x;
-    gyro_y = g.gyro.y;
-    gyro_z = g.gyro.z;
-
-    /* Print out the values */
-    //printSensorReadings();
-
-    
-    // Move mouse cursor
-    moveMouse(gyro_z, gyro_x, true);
-  }
-
-  if (Bluetooth.available() > 0) {
-    currentWalkingState = Bluetooth.read();
-    if (currentWalkingState >= 1) {
-      Keyboard.press('w');
-      Serial.println("Received walking signal");
-    } else if (currentWalkingState == 0) {
-      Keyboard.release('w');
-      Serial.println("Received stopping signal");
-    }
-    Serial.println("");
-  }
-  
+  getMouseState();
+  getMouseSensitivity();
+  processMouseReset();
+  processMouseState();
+  processBluetooth();
   delay(15);
 }
