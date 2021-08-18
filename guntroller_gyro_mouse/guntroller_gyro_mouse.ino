@@ -18,7 +18,7 @@ const int SENSITIVITY_DOWN_PIN = 3; // Makes mouse less sensitive
 const int MOUSE_RESET_PIN      = 5; // Reset mouse cursor position
 
 // OUTPUT PIN numbers
-const int MOUSE_LED_PIN = 13;       // Status LED for mouse function 
+const int MOUSE_LED_PIN        = 13;// Status LED for mouse function 
 
 // CONSTANTS
 const byte MOVE_RATIO_HEIGHT = 2;   // The vertical moving speed ratio of the mouse 
@@ -33,21 +33,21 @@ float gyro_x, gyro_y, gyro_z;       // Data from gyroscope
 
 // Mouse on off
 int mouseState = LOW;               // Mouse function state
-int lastMouseButtonState;
-int currentMouseButtonState;
+bool lastMouseButtonState;
+bool currentMouseButtonState;
 
 // Mouse sensitivity
-int sensitivity = 5;                // Mouse moving sensitivity 1-10
-int lastSensUpButtonState;
-int currentSensUpButtonState;
-int lastSensDownButtonState;
-int currentSensDownButtonState;
+byte sensitivity = 5;                // Mouse moving sensitivity 1-10
+bool lastSensUpButtonState;
+bool currentSensUpButtonState;
+bool lastSensDownButtonState;
+bool currentSensDownButtonState;
 
 // Mouse reset
 int mouseMovedVal_x;
 int mouseMovedVal_y;
-int lastResetButtonState;
-int currentResetButtonState;
+bool lastResetButtonState;
+bool currentResetButtonState;
 
 // Bluetooth pedometer
 int currentWalkingState = -1;
@@ -193,8 +193,22 @@ void resetMouseMovedVals() {
 
 void moveMouse(float x, float y, bool fromSensor) {
   // Calculate values (these are SIGNED byte values)
-  int xVal = fromSensor ? -x * MOVE_RATIO_WIDTH * sensitivity : x * RESET_MOVE_RATIO;
-  int yVal = fromSensor ?  y * MOVE_RATIO_WIDTH * sensitivity : y * RESET_MOVE_RATIO;
+  int xVal = fromSensor ? -x * MOVE_RATIO_WIDTH  * sensitivity : x * RESET_MOVE_RATIO;
+  int yVal = fromSensor ?  y * MOVE_RATIO_HEIGHT * sensitivity : y * RESET_MOVE_RATIO;
+
+  // Set moving limit
+  if (fromSensor)
+  {
+    if (mouseMovedVal_x >  SINGLE_MOVE_LIMIT * MOVE_RATIO_WIDTH)
+      xVal = (xVal > 0) ? 0 : xVal;
+    if (mouseMovedVal_x < -SINGLE_MOVE_LIMIT * MOVE_RATIO_WIDTH)
+      xVal = (xVal < 0) ? 0 : xVal;
+    if (mouseMovedVal_y >  SINGLE_MOVE_LIMIT * MOVE_RATIO_HEIGHT)
+      yVal = (yVal > 0) ? 0 : yVal;
+    if (mouseMovedVal_y < -SINGLE_MOVE_LIMIT * MOVE_RATIO_HEIGHT)
+      yVal = (yVal < 0) ? 0 : yVal;
+  }
+  
 
   Serial.print("xVal: ");
   Serial.print(xVal);
@@ -294,11 +308,8 @@ void loop() {
 
   // Mouse reset button is pressed
   if (lastResetButtonState == HIGH && currentResetButtonState == LOW) {
+    // Print message
     Serial.println("Reset button pressed, mouse position and traveled values resetted.");
-    Serial.print("mouseMovedVal_x: ");
-    Serial.print(mouseMovedVal_x);
-    Serial.print(", mouseMovedVal_y: ");
-    Serial.println(mouseMovedVal_y);
     
     // Move mouse opposite to where it has been moved
     moveMouse(-mouseMovedVal_x, -mouseMovedVal_y, false);
