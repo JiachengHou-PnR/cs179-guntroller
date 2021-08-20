@@ -11,20 +11,30 @@ SoftwareSerial Bluetooth(10, 11); // RX | TX
 // MPU6050
 Adafruit_MPU6050 mpu;
 
-// INPUT PIN numbers
+// SETTINGS INPUT PIN numbers
 const int MOUSE_ON_OFF_PIN     = 7; // Turns mouse function on/off
 const int SENSITIVITY_UP_PIN   = 4; // Makes mouse more sensitive
 const int SENSITIVITY_DOWN_PIN = 3; // Makes mouse less sensitive
 const int MOUSE_RESET_PIN      = 5; // Reset mouse cursor position
 
+// GAME INPUT PIN numbers
+const int TRIGGER_PIN          = 1; // Left mouse click
+
 // OUTPUT PIN numbers
 const int MOUSE_LED_PIN        = 13;// Status LED for mouse function
 
-// CONSTANTS
+// MOUSE MOVEMENT CONSTANTS
 const byte MOVE_RATIO_HEIGHT = 2;   // The vertical moving speed ratio of the mouse
 const byte MOVE_RATIO_WIDTH  = 3;   // The horizontal moving speed ratio of the mouse
 const byte SINGLE_MOVE_LIMIT = 127; // The max value for a single Mouse.move(), i.e. sizeof(byte)/2
 const float RESET_MOVE_RATIO = 0.7; // Reduce mouse moved vals
+
+// GAME INPUT CONSTANTS
+const int JUMP_ACCELERATION_THRESHOLD = 6;   // The minimum Y accel value to trigger a "JUMP_KEY_CODE" action"
+
+// KEY CODES
+const char MOVE_FOWARD_KEY_CODE = 'w';
+const char JUMP_KEY_CODE = ' ';
 
 // VARIABLES
 // Sensors readings
@@ -52,14 +62,15 @@ bool currentResetButtonState;
 // Bluetooth pedometer
 int currentWalkingState = -1;
 
-// Keycodes
-char move_forward = 'w';
+// Game input button states
+bool triggerButtonState;
 
 void setup(void) {
   pinMode(MOUSE_ON_OFF_PIN, INPUT);
   pinMode(SENSITIVITY_UP_PIN, INPUT);
   pinMode(SENSITIVITY_DOWN_PIN, INPUT);
   pinMode(MOUSE_RESET_PIN, INPUT);
+  pinMode(TRIGGER_PIN, INPUT);
 
   pinMode(MOUSE_LED_PIN, OUTPUT);
   currentMouseButtonState = digitalRead(MOUSE_ON_OFF_PIN);
@@ -166,6 +177,9 @@ void getButtonStates() {
   // Mouse reset button
   lastResetButtonState    = currentResetButtonState;
   currentResetButtonState = digitalRead(MOUSE_RESET_PIN);
+
+  // Trigger button
+  triggerButtonState = !digitalRead(TRIGGER_PIN);
 }
 
 void getMouseState()
@@ -241,6 +255,7 @@ void processMouseReset()
     resetMouseMovedVals();
   }
 }
+
 void processMouseState()
 {
   if (mouseState) {
@@ -261,17 +276,37 @@ void processMouseState()
     // Move mouse cursor
     moveMouse(gyro_z, gyro_x, true);
   }
-
 }
+
+void processGameInput()
+{
+  if (triggerButtonState) {
+    if (!Mouse.isPressed(MOUSE_LEFT)) {
+      Mouse.press(MOUSE_LEFT);
+    }
+  } else {
+    if (Mouse.isPressed(MOUSE_LEFT)) {
+      Mouse.release(MOUSE_LEFT);
+    }
+  }
+
+  if (acce_y >= JUMP_ACCELERATION_THRESHOLD){
+    Keyboard.press(JUMP_KEY_CODE);
+  }
+  else {
+    Keyboard.release(JUMP_KEY_CODE);
+  }
+}
+
 void processBluetooth()
 {
   if (Bluetooth.available() > 0) {
     currentWalkingState = Bluetooth.read();
     if (currentWalkingState >= 1) {
-      Keyboard.press(move_forward);
+      Keyboard.press(MOVE_FOWARD_KEY_CODE);
       Serial.println("Received walking signal");
     } else if (currentWalkingState == 0) {
-      Keyboard.release(move_forward);
+      Keyboard.release(MOVE_FOWARD_KEY_CODE);
       Serial.println("Received stopping signal");
     }
     Serial.println("");
@@ -369,5 +404,6 @@ void loop()
   processMouseReset();
   processMouseState();
   processBluetooth();
+  processGameInput();
   delay(15);
 }
