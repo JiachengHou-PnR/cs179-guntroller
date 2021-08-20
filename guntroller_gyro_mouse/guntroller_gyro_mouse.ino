@@ -30,7 +30,11 @@ const byte SINGLE_MOVE_LIMIT = 127; // The max value for a single Mouse.move(), 
 const float RESET_MOVE_RATIO = 0.7; // Reduce mouse moved vals
 
 // GAME INPUT CONSTANTS
-const int JUMP_ACCELERATION_THRESHOLD = 6;   // The minimum Y accel value to trigger a "jump" action"
+const int JUMP_ACCELERATION_THRESHOLD = 6;   // The minimum Y accel value to trigger a "JUMP_KEY_CODE" action"
+
+// KEY CODES
+const char MOVE_FOWARD_KEY_CODE = 'w';
+const char JUMP_KEY_CODE = ' ';
 
 // VARIABLES
 // Sensors readings
@@ -60,10 +64,6 @@ int currentWalkingState = -1;
 
 // Game input button states
 bool triggerButtonState;
-
-// Keycodes
-char move_forward = 'w';
-char jump = ' ';
 
 void setup(void) {
   pinMode(MOUSE_ON_OFF_PIN, INPUT);
@@ -291,10 +291,10 @@ void processGameInput()
   }
 
   if (acce_y >= JUMP_ACCELERATION_THRESHOLD){
-    Keyboard.press(jump);
+    Keyboard.press(JUMP_KEY_CODE);
   }
   else {
-    Keyboard.release(jump);
+    Keyboard.release(JUMP_KEY_CODE);
   }
 }
 
@@ -303,10 +303,10 @@ void processBluetooth()
   if (Bluetooth.available() > 0) {
     currentWalkingState = Bluetooth.read();
     if (currentWalkingState >= 1) {
-      Keyboard.press(move_forward);
+      Keyboard.press(MOVE_FOWARD_KEY_CODE);
       Serial.println("Received walking signal");
     } else if (currentWalkingState == 0) {
-      Keyboard.release(move_forward);
+      Keyboard.release(MOVE_FOWARD_KEY_CODE);
       Serial.println("Received stopping signal");
     }
     Serial.println("");
