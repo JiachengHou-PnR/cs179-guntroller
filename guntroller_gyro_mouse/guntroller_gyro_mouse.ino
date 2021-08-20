@@ -11,11 +11,14 @@ SoftwareSerial Bluetooth(10, 11); // RX | TX
 // MPU6050
 Adafruit_MPU6050 mpu;
 
-// INPUT PIN numbers
+// SETTINGS INPUT PIN numbers
 const int MOUSE_ON_OFF_PIN     = 7; // Turns mouse function on/off
 const int SENSITIVITY_UP_PIN   = 4; // Makes mouse more sensitive
 const int SENSITIVITY_DOWN_PIN = 3; // Makes mouse less sensitive
 const int MOUSE_RESET_PIN      = 5; // Reset mouse cursor position
+
+// GAME INPUT PIN numbers
+const int TRIGGER_PIN          = 1; // Left mouse click
 
 // OUTPUT PIN numbers
 const int MOUSE_LED_PIN        = 13;// Status LED for mouse function
@@ -52,6 +55,9 @@ bool currentResetButtonState;
 // Bluetooth pedometer
 int currentWalkingState = -1;
 
+// Game input button states
+bool triggerButtonState;
+
 // Keycodes
 char move_forward = 'w';
 
@@ -60,6 +66,7 @@ void setup(void) {
   pinMode(SENSITIVITY_UP_PIN, INPUT);
   pinMode(SENSITIVITY_DOWN_PIN, INPUT);
   pinMode(MOUSE_RESET_PIN, INPUT);
+  pinMode(TRIGGER_PIN, INPUT);
 
   pinMode(MOUSE_LED_PIN, OUTPUT);
   currentMouseButtonState = digitalRead(MOUSE_ON_OFF_PIN);
@@ -166,6 +173,9 @@ void getButtonStates() {
   // Mouse reset button
   lastResetButtonState    = currentResetButtonState;
   currentResetButtonState = digitalRead(MOUSE_RESET_PIN);
+
+  // Trigger button
+  triggerButtonState = !digitalRead(TRIGGER_PIN);
 }
 
 void getMouseState()
@@ -241,6 +251,7 @@ void processMouseReset()
     resetMouseMovedVals();
   }
 }
+
 void processMouseState()
 {
   if (mouseState) {
@@ -261,8 +272,21 @@ void processMouseState()
     // Move mouse cursor
     moveMouse(gyro_z, gyro_x, true);
   }
-
 }
+
+void processGameInput()
+{
+  if (triggerButtonState) {
+    if (!Mouse.isPressed(MOUSE_LEFT)) {
+      Mouse.press(MOUSE_LEFT);
+    }
+  } else {
+    if (Mouse.isPressed(MOUSE_LEFT)) {
+      Mouse.release(MOUSE_LEFT);
+    }
+  }
+}
+
 void processBluetooth()
 {
   if (Bluetooth.available() > 0) {
@@ -369,5 +393,6 @@ void loop()
   processMouseReset();
   processMouseState();
   processBluetooth();
+  processGameInput();
   delay(15);
 }
