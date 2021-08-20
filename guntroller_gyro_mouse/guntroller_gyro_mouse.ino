@@ -23,11 +23,14 @@ const int TRIGGER_PIN          = 1; // Left mouse click
 // OUTPUT PIN numbers
 const int MOUSE_LED_PIN        = 13;// Status LED for mouse function
 
-// CONSTANTS
+// MOUSE MOVEMENT CONSTANTS
 const byte MOVE_RATIO_HEIGHT = 2;   // The vertical moving speed ratio of the mouse
 const byte MOVE_RATIO_WIDTH  = 3;   // The horizontal moving speed ratio of the mouse
 const byte SINGLE_MOVE_LIMIT = 127; // The max value for a single Mouse.move(), i.e. sizeof(byte)/2
 const float RESET_MOVE_RATIO = 0.7; // Reduce mouse moved vals
+
+// GAME INPUT CONSTANTS
+const int JUMP_ACCELERATION_THRESHOLD = 6;   // The minimum Y accel value to trigger a "jump" action"
 
 // VARIABLES
 // Sensors readings
@@ -60,6 +63,7 @@ bool triggerButtonState;
 
 // Keycodes
 char move_forward = 'w';
+char jump = ' ';
 
 void setup(void) {
   pinMode(MOUSE_ON_OFF_PIN, INPUT);
@@ -284,6 +288,13 @@ void processGameInput()
     if (Mouse.isPressed(MOUSE_LEFT)) {
       Mouse.release(MOUSE_LEFT);
     }
+  }
+
+  if (acce_y >= JUMP_ACCELERATION_THRESHOLD){
+    Keyboard.press(jump);
+  }
+  else {
+    Keyboard.release(jump);
   }
 }
 
