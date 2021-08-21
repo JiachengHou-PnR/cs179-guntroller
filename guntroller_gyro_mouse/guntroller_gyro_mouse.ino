@@ -18,10 +18,11 @@ const int SENSITIVITY_DOWN_PIN = 3; // Makes mouse less sensitive
 const int MOUSE_RESET_PIN      = 5; // Reset mouse cursor position
 
 // GAME INPUT PIN numbers
-const int TRIGGER_PIN          = 1; // Left mouse click
+const int TRIGGER_PIN          = 8; // Left mouse click and activate solenoid
 
 // OUTPUT PIN numbers
 const int MOUSE_LED_PIN        = 13;// Status LED for mouse function
+const int SOLENOID_PIN         = 12;// Solenoid to simulate recoil
 
 // MOUSE MOVEMENT CONSTANTS
 const byte MOVE_RATIO_HEIGHT = 2;   // The vertical moving speed ratio of the mouse
@@ -31,6 +32,10 @@ const float RESET_MOVE_RATIO = 0.7; // Reduce mouse moved vals
 
 // GAME INPUT CONSTANTS
 const int JUMP_ACCELERATION_THRESHOLD = 6;   // The minimum Y accel value to trigger a "JUMP_KEY_CODE" action"
+
+// SOLENOID CONSTANTS
+const byte SOLENOID_WAIT     = 100; // Number of milliseconds to wait after turning off the solenoid
+const byte SOLENOID_TIME     = 500; // Number of milliseconds to extend the solenoid
 
 // KEY CODES
 const char MOVE_FOWARD_KEY_CODE = 'w';
@@ -47,7 +52,7 @@ bool lastMouseButtonState;
 bool currentMouseButtonState;
 
 // Mouse sensitivity
-byte sensitivity = 5;                // Mouse moving sensitivity 1-10
+byte sensitivity = 5;               // Mouse moving sensitivity 1-10
 bool lastSensUpButtonState;
 bool currentSensUpButtonState;
 bool lastSensDownButtonState;
@@ -65,6 +70,10 @@ int currentWalkingState = -1;
 // Game input button states
 bool triggerButtonState;
 
+// Solenoid
+unsigned long solenoidWait = 0;     // Time since stopping solenoid
+unsigned long solenoidTime = 0;     // Time since starting solenoid or 0 if inactive
+
 void setup(void) {
   pinMode(MOUSE_ON_OFF_PIN, INPUT);
   pinMode(SENSITIVITY_UP_PIN, INPUT);
@@ -73,6 +82,7 @@ void setup(void) {
   pinMode(TRIGGER_PIN, INPUT);
 
   pinMode(MOUSE_LED_PIN, OUTPUT);
+  pinMode(SOLENOID_PIN, OUTPUT);
   currentMouseButtonState = digitalRead(MOUSE_ON_OFF_PIN);
 
   Serial.begin(115200);
@@ -240,7 +250,6 @@ void getMouseSensitivity()
   }
 }
 
-
 void processMouseReset()
 {
   // Mouse reset button is pressed
@@ -300,8 +309,12 @@ void processGameInput()
 
 void processBluetooth()
 {
+  // Check Bluetooth data is available
   if (Bluetooth.available() > 0) {
+    // Read data
     currentWalkingState = Bluetooth.read();
+
+    // Convert data into in-game action
     if (currentWalkingState >= 1) {
       Keyboard.press(MOVE_FOWARD_KEY_CODE);
       Serial.println("Received walking signal");
@@ -309,6 +322,39 @@ void processBluetooth()
       Keyboard.release(MOVE_FOWARD_KEY_CODE);
       Serial.println("Received stopping signal");
     }
+
+    Serial.println("");
+  }
+}
+
+void processSolenoid()
+{
+  if (triggerButtonState) {
+    // Toggle state of solenoid
+    if (solenoidTime == 0 && SOLENOID_WAIT <= (millis() - solenoidWait)) {
+      // Record when the solenoid starts
+      solenoidTime = millis();
+
+      // Turn on solenoid
+      digitalWrite(SOLENOID_PIN, HIGH);
+
+      // Print message
+      Serial.println("Solenoid ON");
+      Serial.println("");
+    }
+  }
+
+  // Check if the solenoid is running and if it is time to turn it off
+  if (solenoidTime > 0 && SOLENOID_TIME <= (millis() - solenoidTime)) {
+    // Turn off solenoid
+    digitalWrite(SOLENOID_PIN, LOW);
+    solenoidTime = 0;
+
+    // Record when the solenoid stops
+    solenoidWait = millis();
+
+    // Print message
+    Serial.println("Solenoid OFF");
     Serial.println("");
   }
 }
@@ -405,5 +451,6 @@ void loop()
   processMouseState();
   processBluetooth();
   processGameInput();
+  processSolenoid();
   delay(15);
 }
