@@ -8,14 +8,20 @@ import 'package:pedometer_app/ped.dart';
 import 'package:pedometer_app/bluetooth.dart';
 import 'package:pedometer_app/accelerometer.dart';
 
+const int MAX_SENS = 10;
+const int WALK_SENS = 8;
+const int STOP_SENS = 6;
+const double MOVE_THRESHOLD = 3.5;
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final service = await PrefServiceShared.init(
     defaults: {
-      'sensor': 'accelerometer',
-      'walk_sensitivity': 8,
-      'stop_sensitivity': 6,
+      'sensor': 'pedometer',
+      'walk_sensitivity': WALK_SENS,
+      'stop_sensitivity': STOP_SENS,
+      'move_threshold': MOVE_THRESHOLD,
       'ui_theme': 'system',
     },
   );
@@ -28,10 +34,20 @@ Future<void> main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
-  ThemeMode getTheme(BuildContext context) {
-    String? theme = PrefService.of(context).get('ui_theme');
-    switch (theme) {
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late String _sensor, _theme;
+  late int _walkSens, _stopSens;
+  late double _moveThreshold;
+
+  bool _refreshState = true;
+
+  ThemeMode _getTheme() {
+    switch (_theme) {
       case 'system':
         return ThemeMode.system;
       case 'light':
@@ -43,18 +59,57 @@ class MyApp extends StatelessWidget {
     }
   }
 
+  void _updateState(BuildContext context) {
+    setState(() {
+      _sensor = PrefService.of(context).get('sensor') ?? 'pedometer';
+      _theme = PrefService.of(context).get('ui_theme') ?? 'system';
+      _walkSens = PrefService.of(context).get('walkSens') ?? WALK_SENS;
+      _stopSens = PrefService.of(context).get('stopSens') ?? STOP_SENS;
+      _moveThreshold =
+          PrefService.of(context).get('moveThreshold') ?? MOVE_THRESHOLD;
+    });
+  }
+
+  void _refresh() {
+    setState(() {
+      _refreshState = true;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_refreshState) {
+      _updateState(context);
+      _refreshState = false;
+    }
+
     return MaterialApp(
       theme: ThemeData.light(),
       darkTheme: ThemeData.dark(),
-      themeMode: getTheme(context),
-      home: MainPage(),
+      themeMode: _getTheme(),
+      home: MainPage(
+          sensor: _sensor,
+          walkSens: _walkSens,
+          stopSens: _stopSens,
+          moveThreshold: _moveThreshold,
+          onDrawerClose: _refresh),
     );
   }
 }
 
 class MainPage extends StatefulWidget {
+  final String sensor;
+  final int walkSens, stopSens;
+  final double moveThreshold;
+  final VoidCallback onDrawerClose;
+
+  const MainPage(
+      {required this.sensor,
+      required this.walkSens,
+      required this.stopSens,
+      required this.moveThreshold,
+      required this.onDrawerClose});
+
   @override
   _MainPageState createState() => _MainPageState();
 }
@@ -62,11 +117,6 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   List<BluetoothConnection> _connections = [];
   bool _walking = false;
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   void _sendData() {
     print("Sending ${_walking ? 1 : 0}");
@@ -92,8 +142,14 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: Preferences(),
+      onDrawerChanged: (bool open) {
+        if (!open) {
+          widget.onDrawerClose();
+        }
+      },
       appBar: AppBar(
-        title: const Text('Pedometer'),
+        title:
+            Text(widget.sensor[0].toUpperCase() + widget.sensor.substring(1)),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.bluetooth),
@@ -108,14 +164,14 @@ class _MainPageState extends State<MainPage> {
           ),
         ],
       ),
-      body: PrefService.of(context).get('sensor') == 'pedometer'
+      body: widget.sensor == 'pedometer'
           ? PedometerPage(onStatusChange: _walkStatus)
           : AccelerometerPage(
               onStatusChange: _walkStatus,
-              walkSens: 10 -
-                  (PrefService.of(context).get<int>('walk_sensitivity') ?? 8),
-              stopSens: 10 -
-                  (PrefService.of(context).get<int>('stop_sensitivity') ?? 6)),
+              walkSens: MAX_SENS - widget.walkSens,
+              stopSens: MAX_SENS - widget.stopSens,
+              moveThreshold: widget.moveThreshold,
+            ),
     );
   }
 }
@@ -125,21 +181,29 @@ class Preferences extends StatelessWidget {
   Widget build(BuildContext context) {
     return Drawer(
       child: PrefPage(children: [
-        PrefTitle(
-            title: const Text('Settings'),
-            subtitle: const Text('Restart required to take effect')),
+        PrefTitle(title: const Text('Settings')),
         PrefTitle(title: const Text('Sensor')),
         PrefRadio(
-          title: Text('Accelerometer'),
-          pref: 'sensor',
-          value: 'accelerometer',
-        ),
-        PrefRadio(
           title: Text('Pedometer'),
+          subtitle: Text('More accurate, but slower'),
           pref: 'sensor',
           value: 'pedometer',
         ),
+        PrefRadio(
+          title: Text('Accelerometer'),
+          subtitle: Text('Less accurate, but faster'),
+          pref: 'sensor',
+          value: 'accelerometer',
+        ),
         PrefTitle(title: const Text('Accelerometer Settings')),
+        PrefSlider<double>(
+          title: Text('Threshold'),
+          pref: 'move_threshold',
+          trailing: (num v) => Text('$v m/s^2'),
+          divisions: 11,
+          min: 0.5,
+          max: 6,
+        ),
         PrefSlider<int>(
           title: Text('Walk Sensitivity'),
           pref: 'walk_sensitivity',

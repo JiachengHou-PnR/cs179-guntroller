@@ -1,4 +1,4 @@
-//import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
@@ -7,20 +7,20 @@ class AccelerometerPage extends StatefulWidget {
   final ValueChanged<bool> onStatusChange;
   final int walkSens;
   final int stopSens;
+  final double moveThreshold;
 
   const AccelerometerPage(
       {required this.onStatusChange,
       required this.walkSens,
-      required this.stopSens});
+      required this.stopSens,
+      required this.moveThreshold});
 
   @override
   _AccelerometerPageState createState() => _AccelerometerPageState();
 }
 
-const double MOVE_THRESHOLD = 4;
-
 class _AccelerometerPageState extends State<AccelerometerPage> {
-  late Stream<UserAccelerometerEvent> _accelerometerStream;
+  late StreamSubscription<UserAccelerometerEvent> _accelerometerStream;
   String _status = "stopped";
   double _x = 0, _y = 0, _z = 0;
   int _walkCount = 0, _stopCount = 0;
@@ -31,6 +31,13 @@ class _AccelerometerPageState extends State<AccelerometerPage> {
     initPlatformState();
   }
 
+  @override
+  void dispose() {
+    _accelerometerStream.cancel();
+
+    super.dispose();
+  }
+
   void onMovement(UserAccelerometerEvent event) {
     print(event);
     String temp = _status;
@@ -38,9 +45,9 @@ class _AccelerometerPageState extends State<AccelerometerPage> {
       _x = event.x;
       _y = event.y;
       _z = event.z;
-      if ((_x.abs() > MOVE_THRESHOLD ||
-          _y.abs() > MOVE_THRESHOLD ||
-          _z.abs() > MOVE_THRESHOLD)) {
+      if ((_x.abs() > widget.moveThreshold ||
+          _y.abs() > widget.moveThreshold ||
+          _z.abs() > widget.moveThreshold)) {
         _walkCount++;
         _stopCount = 0;
         if (_walkCount > widget.walkSens) {
@@ -69,8 +76,8 @@ class _AccelerometerPageState extends State<AccelerometerPage> {
   }
 
   void initPlatformState() {
-    _accelerometerStream = userAccelerometerEvents;
-    _accelerometerStream.listen(onMovement).onError(onMovementError);
+    _accelerometerStream = userAccelerometerEvents.listen(onMovement);
+    _accelerometerStream.onError(onMovementError);
 
     if (!mounted) return;
   }
