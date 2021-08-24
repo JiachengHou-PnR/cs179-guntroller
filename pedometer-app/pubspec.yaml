@@ -30,6 +30,8 @@ dependencies:
   cupertino_icons: ^1.0.2
   pedometer: ^3.0.0
   flutter_bluetooth_serial: ^0.3.2
+  sensors_plus: ^1.1.0
+  pref: ^2.4.0
 
 dev_dependencies:
   flutter_test:

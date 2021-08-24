@@ -13,9 +13,9 @@ class PedometerPage extends StatefulWidget {
 }
 
 class _PedometerPageState extends State<PedometerPage> {
-  late Stream<StepCount> _stepCountStream;
-  late Stream<PedestrianStatus> _pedestrianStatusStream;
-  String _status = '?', _steps = '?';
+  late StreamSubscription<StepCount> _stepCountStream;
+  late StreamSubscription<PedestrianStatus> _pedestrianStatusStream;
+  String _status = 'stopped', _steps = '?';
   int _count = 0, _base = 0;
 
   @override
@@ -24,10 +24,21 @@ class _PedometerPageState extends State<PedometerPage> {
     initPlatformState();
   }
 
+  @override
+  void dispose() {
+    _stepCountStream.cancel();
+    _pedestrianStatusStream.cancel();
+
+    super.dispose();
+  }
+
   void onStepCount(StepCount event) {
     print(event);
     setState(() {
       _steps = event.steps.toString();
+      if (_base == 0 && _count == 0) {
+        _base = event.steps;
+      }
       _count = event.steps;
     });
   }
@@ -59,13 +70,12 @@ class _PedometerPageState extends State<PedometerPage> {
   }
 
   void initPlatformState() {
-    _pedestrianStatusStream = Pedometer.pedestrianStatusStream;
-    _pedestrianStatusStream
-        .listen(onPedestrianStatusChanged)
-        .onError(onPedestrianStatusError);
+    _pedestrianStatusStream =
+        Pedometer.pedestrianStatusStream.listen(onPedestrianStatusChanged);
+    _pedestrianStatusStream.onError(onPedestrianStatusError);
 
-    _stepCountStream = Pedometer.stepCountStream;
-    _stepCountStream.listen(onStepCount).onError(onStepCountError);
+    _stepCountStream = Pedometer.stepCountStream.listen(onStepCount);
+    _stepCountStream.onError(onStepCountError);
 
     if (!mounted) return;
   }
