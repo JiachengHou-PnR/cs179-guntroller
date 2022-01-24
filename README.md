@@ -6,6 +6,8 @@ CS179J - Senior Design Project in Computer Architecture and Embedded Systems
 
 *University of California, Riverside*
 
+Forked from https://github.com/Rikijaz/cs179-guntroller
+
 ---
 
 ## Project Description
